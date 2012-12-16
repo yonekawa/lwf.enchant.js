@@ -14,7 +14,7 @@
 
 
 (function() {
-  var CanvasGroup, currentTime, fromTime, _ref;
+  var currentTime, fromTime;
 
   LWF.useCanvasRenderer();
 
@@ -45,15 +45,17 @@
     return tick;
   };
 
-  CanvasGroup = (_ref = enchant.CanvasLayer) != null ? _ref : enchant.CanvasGroup;
-
-  enchant.lwf.LWFEntity = enchant.Class.create(CanvasGroup, {
+  enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity, {
     initialize: function(lwfFileName, lwfPrefix) {
-      var _this = this;
-      CanvasGroup.call(this);
+      var CanvasGroup, _ref,
+        _this = this;
+      enchant.Entity.call(this);
       this._lwfFileName = lwfFileName;
       this._lwfPrefix = lwfPrefix;
       this._cache = LWF.ResourceCache.get();
+      CanvasGroup = (_ref = enchant.CanvasLayer) != null ? _ref : enchant.CanvasGroup;
+      this._canvas = new CanvasGroup();
+      this._element = this._canvas._element;
       if (enchant.ENV.TOUCH_ENABLED) {
         this._element.addEventListener('touchstart', (function(e) {
           return _this.onTouchStart(e);
@@ -106,6 +108,24 @@
       if (this.lwf != null) {
         this.lwf.exec(enchant.lwf.calcTick());
         return this.lwf.render();
+      }
+    },
+    x: {
+      get: function() {
+        return this._x;
+      },
+      set: function(x) {
+        this._x = x;
+        return this._element.style.left = "" + x + "px";
+      }
+    },
+    y: {
+      get: function() {
+        return this._y;
+      },
+      set: function(y) {
+        this._y = y;
+        return this._element.style.top = "" + y + "px";
       }
     },
     onTouchStart: function(e) {

@@ -38,15 +38,19 @@ enchant.lwf.calcTick = ->
   tick
 
 # TODO: The plugin does not work with enchant.js v0.6.
-CanvasGroup = enchant.CanvasLayer ? enchant.CanvasGroup
-enchant.lwf.LWFEntity = enchant.Class.create(CanvasGroup,
+enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
   initialize: (lwfFileName, lwfPrefix) ->
-    CanvasGroup.call(@)
+    enchant.Entity.call(@)
 
     @_lwfFileName = lwfFileName
     @_lwfPrefix = lwfPrefix
 
     @_cache = LWF.ResourceCache.get()
+
+    CanvasGroup = enchant.CanvasLayer ? enchant.CanvasGroup
+    @_canvas = new CanvasGroup()
+    @_element = @_canvas._element
+
     if enchant.ENV.TOUCH_ENABLED
       @_element.addEventListener('touchstart', ((e) => @onTouchStart(e)), false)
       @_element.addEventListener('touchmove',  ((e) => @onTouchMove(e)),  false)
@@ -55,9 +59,6 @@ enchant.lwf.LWFEntity = enchant.Class.create(CanvasGroup,
       @_element.addEventListener('mousedown',  ((e) => @onTouchStart(e)), false)
       @_element.addEventListener('mousemove',  ((e) => @onTouchMove(e)),  false)
       @_element.addEventListener('mouseup',    ((e) => @onTouchEnd(e)),   false)
-
-    # @addEventListener(enchant.Event.ADDED,   => @parentNode._element.appendChild(@_element))
-    # @addEventListener(enchant.Event.REMOVED, => @parentNode._element.removeChild(@_element))
 
   load: ->
     @_cache.loadLWF(
@@ -86,6 +87,20 @@ enchant.lwf.LWFEntity = enchant.Class.create(CanvasGroup,
     if @lwf?
       @lwf.exec(enchant.lwf.calcTick())
       @lwf.render()
+
+  x:
+    get: ->
+      @_x
+    set: (x) ->
+      @_x = x
+      @_element.style.left = "#{x}px"
+
+  y:
+    get: ->
+      @_y
+    set: (y) ->
+      @_y = y
+      @_element.style.top = "#{y}px"
 
   onTouchStart: (e) ->
     x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
