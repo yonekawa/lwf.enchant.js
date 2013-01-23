@@ -21,6 +21,7 @@
   window.enchant.lwf = {
     _env: {
       frameRate: 60,
+      scale: 1,
       use3D: true
     }
   };
@@ -78,8 +79,11 @@
         }), false);
       }
     },
-    load: function() {
+    load: function(callback) {
       var _this = this;
+      if (callback == null) {
+        callback = null;
+      }
       return this._cache.loadLWF({
         lwf: this._lwfFileName,
         prefix: this._lwfPrefix,
@@ -88,6 +92,7 @@
         onload: function(lwf) {
           var e;
           _this.lwf = lwf;
+          _this.lwf.scaleForWidth(lwf.width / enchant.lwf._env.scale);
           _this.lwf.setFrameRate(enchant.lwf._env.frameRate);
           e = new enchant.Event(enchant.Event.LWF_LOADED);
           e.lwf = lwf;
@@ -95,6 +100,9 @@
           _this._element.height = lwf.height;
           _this._element.style.width = "" + lwf.width + "px";
           _this._element.style.height = "" + lwf.height + "px";
+          if (typeof callback === "function") {
+            callback(lwf);
+          }
           _this.dispatchEvent(e);
           return _this.main();
         }
@@ -108,6 +116,16 @@
       if (this.lwf != null) {
         this.lwf.exec(enchant.lwf.calcTick());
         return this.lwf.render();
+      }
+    },
+    width: {
+      get: function() {
+        return this._element.width / enchant.lwf._env.scale;
+      }
+    },
+    height: {
+      get: function() {
+        return this._element.height / enchant.lwf._env.scale;
       }
     },
     x: {
@@ -129,9 +147,11 @@
       }
     },
     onTouchStart: function(e) {
-      var x, y;
-      x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - this._element.offsetLeft;
-      y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - this._element.offsetTop;
+      var clientX, clientY, x, y;
+      clientX = e.clientX != null ? e.clientX : e.touches[0].clientX;
+      clientY = e.clientY != null ? e.clientY : e.touches[0].clientY;
+      x = clientX + document.body.scrollLeft + document.documentElement.scrollLeft - this._element.offsetLeft;
+      y = clientY + document.body.scrollTop + document.documentElement.scrollTop - this._element.offsetTop;
       if (this.lwf != null) {
         this.lwf.inputPoint(x, y);
         this.lwf.inputPress();
@@ -141,9 +161,11 @@
       return this.dispatchEvent(e);
     },
     onTouchMove: function(e) {
-      var x, y;
-      x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - this._element.offsetLeft;
-      y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - this._element.offsetTop;
+      var clientX, clientY, x, y;
+      clientX = e.clientX != null ? e.clientX : e.touches[0].clientX;
+      clientY = e.clientY != null ? e.clientY : e.touches[0].clientY;
+      x = clientX + document.body.scrollLeft + document.documentElement.scrollLeft - this._element.offsetLeft;
+      y = clientY + document.body.scrollTop + document.documentElement.scrollTop - this._element.offsetTop;
       if (this.lwf != null) {
         this.lwf.inputPoint(x, y);
       }
@@ -152,14 +174,10 @@
       return this.dispatchEvent(e);
     },
     onTouchEnd: function(e) {
-      var x, y;
-      x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - this._element.offsetLeft;
-      y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - this._element.offsetTop;
       if (this.lwf != null) {
         this.lwf.inputRelease();
       }
       e = new enchant.Event(enchant.Event.TOUCH_END);
-      e._initPosition(x, y);
       return this.dispatchEvent(e);
     }
   });

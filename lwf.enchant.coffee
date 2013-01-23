@@ -15,6 +15,7 @@ LWF.useCanvasRenderer()
 window.enchant.lwf =
   _env:
     frameRate: 60
+    scale: 1
     use3D: true
 
 enchant.Event.LWF_LOADED = 'lwf_loaded'
@@ -60,7 +61,7 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
       @_element.addEventListener('mousemove',  ((e) => @onTouchMove(e)),  false)
       @_element.addEventListener('mouseup',    ((e) => @onTouchEnd(e)),   false)
 
-  load: ->
+  load: (callback = null) ->
     @_cache.loadLWF(
       lwf    : @_lwfFileName
       prefix : @_lwfPrefix
@@ -68,6 +69,7 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
       use3D  : enchant.lwf._env.use3D
       onload : (lwf) =>
         @lwf = lwf
+        @lwf.scaleForWidth(lwf.width / enchant.lwf._env.scale)
         @lwf.setFrameRate(enchant.lwf._env.frameRate)
 
         e = new enchant.Event(enchant.Event.LWF_LOADED)
@@ -77,6 +79,8 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
         @_element.height = lwf.height
         @_element.style.width = "#{lwf.width}px"
         @_element.style.height = "#{lwf.height}px"
+
+        callback?(lwf)
         @dispatchEvent(e)
 
         @main()
@@ -87,6 +91,12 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
     if @lwf?
       @lwf.exec(enchant.lwf.calcTick())
       @lwf.render()
+
+  width:
+    get: -> @_element.width / enchant.lwf._env.scale
+
+  height:
+    get: -> @_element.height / enchant.lwf._env.scale
 
   x:
     get: ->
@@ -103,8 +113,10 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
       @_element.style.top = "#{y}px"
 
   onTouchStart: (e) ->
-    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
-    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - @_element.offsetTop
+    clientX = if e.clientX? then e.clientX else e.touches[0].clientX
+    clientY = if e.clientY? then e.clientY else e.touches[0].clientY
+    x = clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
+    y = clientY + document.body.scrollTop + document.documentElement.scrollTop - @_element.offsetTop
 
     if @lwf?
       @lwf.inputPoint(x, y)
@@ -115,8 +127,10 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
     @dispatchEvent(e)
 
   onTouchMove: (e) ->
-    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
-    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - @_element.offsetTop
+    clientX = if e.clientX? then e.clientX else e.touches[0].clientX
+    clientY = if e.clientY? then e.clientY else e.touches[0].clientY
+    x = clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
+    y = clientY + document.body.scrollTop + document.documentElement.scrollTop - @_element.offsetTop
     @lwf.inputPoint(x, y) if @lwf?
 
     e = new enchant.Event(enchant.Event.TOUCH_MOVE)
@@ -124,11 +138,8 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
     @dispatchEvent(e)
 
   onTouchEnd: (e) ->
-    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - @_element.offsetLeft
-    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - @_element.offsetTop
     @lwf.inputRelease() if @lwf?
 
     e = new enchant.Event(enchant.Event.TOUCH_END)
-    e._initPosition(x, y)
     @dispatchEvent(e)
 )
