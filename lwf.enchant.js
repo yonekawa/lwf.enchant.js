@@ -14,7 +14,7 @@
 
 
 (function() {
-  var currentTime, fromTime;
+  var currentTime, fromTime, main;
 
   LWF.useCanvasRenderer();
 
@@ -30,7 +30,7 @@
 
   enchant.lwf.requestAnimationFrame = (function() {
     return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback, element) {
-      return window.setTimeout(callback, 1000 / 60);
+      return window.setTimeout(callback, 1000 / window.enchant.lwf._env.frameRate);
     };
   })();
 
@@ -46,6 +46,24 @@
     return tick;
   };
 
+  enchant.lwf.entities = [];
+
+  main = function() {
+    var entity, tick, _i, _len, _ref, _results;
+    enchant.lwf.requestAnimationFrame.call(window, main);
+    tick = enchant.lwf.calcTick();
+    _ref = enchant.lwf.entities;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      entity = _ref[_i];
+      entity.lwf.exec(tick);
+      _results.push(entity.lwf.render());
+    }
+    return _results;
+  };
+
+  main();
+
   enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity, {
     initialize: function(lwfFileName, lwfPrefix) {
       var CanvasGroup, _ref,
@@ -57,6 +75,8 @@
       CanvasGroup = (_ref = enchant.CanvasLayer) != null ? _ref : enchant.CanvasGroup;
       this._canvas = new CanvasGroup();
       this._element = this._canvas._element;
+      this._directionX = 1;
+      this._directionY = 1;
       if (enchant.ENV.TOUCH_ENABLED) {
         this._element.addEventListener('touchstart', (function(e) {
           return _this.onTouchStart(e);
@@ -92,7 +112,7 @@
         onload: function(lwf) {
           var e;
           _this.lwf = lwf;
-          _this.lwf.scaleForWidth(lwf.width / enchant.lwf._env.scale);
+          _this.lwf.scaleForWidth(Math.round(lwf.width / enchant.lwf._env.scale));
           _this.lwf.setFrameRate(enchant.lwf._env.frameRate);
           e = new enchant.Event(enchant.Event.LWF_LOADED);
           e.lwf = lwf;
@@ -104,19 +124,9 @@
             callback(lwf);
           }
           _this.dispatchEvent(e);
-          return _this.main();
+          return enchant.lwf.entities.unshift(_this);
         }
       });
-    },
-    main: function() {
-      var _this = this;
-      enchant.lwf.requestAnimationFrame.call(window, function() {
-        return _this.main();
-      });
-      if (this.lwf != null) {
-        this.lwf.exec(enchant.lwf.calcTick());
-        return this.lwf.render();
-      }
     },
     width: {
       get: function() {
@@ -145,6 +155,14 @@
         this._y = y;
         return this._element.style.top = "" + y + "px";
       }
+    },
+    reverseX: function() {
+      this._directionX *= -1;
+      return this._element.style.webkitTransform = "translateZ(0) scale(" + this._directionX + ", " + this._directionY + ")";
+    },
+    reverseY: function() {
+      this._directionY *= -1;
+      return this._element.style.webkitTransform = "translateZ(0) scale(" + this._directionX + ", " + this._directionY + ")";
     },
     onTouchStart: function(e) {
       var clientX, clientY, x, y;

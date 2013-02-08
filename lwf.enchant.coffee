@@ -27,7 +27,7 @@ enchant.lwf.requestAnimationFrame = ( ->
   window.oRequestAnimationFrame      or
   window.msRequestAnimationFrame     or
   (callback, element) ->
-    window.setTimeout(callback, 1000 / 60)
+    window.setTimeout(callback, 1000 / window.enchant.lwf._env.frameRate)
 )()
 
 currentTime = 0
@@ -37,6 +37,15 @@ enchant.lwf.calcTick = ->
   tick = currentTime - fromTime
   fromTime = currentTime
   tick
+
+enchant.lwf.entities = []
+main = ->
+  enchant.lwf.requestAnimationFrame.call(window, main)
+  tick = enchant.lwf.calcTick()
+  for entity in enchant.lwf.entities
+    entity.lwf.exec(tick)
+    entity.lwf.render()
+main()
 
 # TODO: The plugin does not work with enchant.js v0.6.
 enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
@@ -51,6 +60,9 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
     CanvasGroup = enchant.CanvasLayer ? enchant.CanvasGroup
     @_canvas = new CanvasGroup()
     @_element = @_canvas._element
+
+    @_directionX = 1
+    @_directionY = 1
 
     if enchant.ENV.TOUCH_ENABLED
       @_element.addEventListener('touchstart', ((e) => @onTouchStart(e)), false)
@@ -69,7 +81,7 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
       use3D  : enchant.lwf._env.use3D
       onload : (lwf) =>
         @lwf = lwf
-        @lwf.scaleForWidth(lwf.width / enchant.lwf._env.scale)
+        @lwf.scaleForWidth(Math.round(lwf.width / enchant.lwf._env.scale))
         @lwf.setFrameRate(enchant.lwf._env.frameRate)
 
         e = new enchant.Event(enchant.Event.LWF_LOADED)
@@ -83,14 +95,8 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
         callback?(lwf)
         @dispatchEvent(e)
 
-        @main()
+        enchant.lwf.entities.unshift(@)
     )
-
-  main: ->
-    enchant.lwf.requestAnimationFrame.call(window, => @main())
-    if @lwf?
-      @lwf.exec(enchant.lwf.calcTick())
-      @lwf.render()
 
   width:
     get: -> @_element.width / enchant.lwf._env.scale
@@ -111,6 +117,14 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
     set: (y) ->
       @_y = y
       @_element.style.top = "#{y}px"
+
+  reverseX: ->
+    @_directionX *= -1
+    @_element.style.webkitTransform = "translateZ(0) scale(#{@_directionX}, #{@_directionY})"
+
+  reverseY: ->
+    @_directionY *= -1
+    @_element.style.webkitTransform = "translateZ(0) scale(#{@_directionX}, #{@_directionY})"
 
   onTouchStart: (e) ->
     clientX = if e.clientX? then e.clientX else e.touches[0].clientX
