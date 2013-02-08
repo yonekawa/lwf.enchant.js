@@ -124,7 +124,19 @@
             callback(lwf);
           }
           _this.dispatchEvent(e);
-          return enchant.lwf.entities.unshift(_this);
+          _this.addEventListener(enchant.Event.REMOVED_FROM_SCENE, function() {
+            var index;
+            index = enchant.lwf.entities.indexOf(_this);
+            if (index !== -1) {
+              return enchant.lwf.entities.splice(index, 1);
+            }
+          });
+          _this.addEventListener(enchant.Event.ADDED_FROM_SCENE, function() {
+            if (enchant.lwf.entities.indexOf(_this) === -1) {
+              return enchant.lwf.entities.unshift(_this);
+            }
+          });
+          return _this.dispatchEvent(enchant.Event.ADDED_FROM_SCENE);
         }
       });
     },

@@ -95,7 +95,14 @@ enchant.lwf.LWFEntity = enchant.Class.create(enchant.Entity,
         callback?(lwf)
         @dispatchEvent(e)
 
-        enchant.lwf.entities.unshift(@)
+        @addEventListener(enchant.Event.REMOVED_FROM_SCENE, =>
+          index = enchant.lwf.entities.indexOf(@)
+          enchant.lwf.entities.splice(index, 1) unless index is -1
+        )
+        @addEventListener(enchant.Event.ADDED_FROM_SCENE, =>
+          enchant.lwf.entities.unshift(@) if enchant.lwf.entities.indexOf(@) is -1
+        )
+        @dispatchEvent(enchant.Event.ADDED_FROM_SCENE)
     )
 
   width:
